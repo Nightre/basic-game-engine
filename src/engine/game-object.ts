@@ -52,8 +52,8 @@ export class GameObject {
     public game: Game;
 
     /** Returns the assigned camera, or the game's main camera if not set */
-    get camera() {
-        return this._camera || this.game.mainCamera;
+    get camera(): Camera {
+        return this._camera || this.parent?.camera || this.game.mainCamera;
     }
 
     /** Returns the child index used for sorting */
@@ -271,7 +271,7 @@ export class GameObject {
     }
 
     /** Physics step (override in subclasses) */
-    onPhysics(_deltaTime: number) {}
+    onPhysics(_deltaTime: number) { }
 
     /** Calls physics update recursively */
     physics(deltaTime: number) {
@@ -296,10 +296,10 @@ export class GameObject {
     }
 
     /** Rendering step (override in subclasses) */
-    render(_ctx: CanvasRenderingContext2D) {}
+    render(_ctx: CanvasRenderingContext2D) { }
 
     /** Update logic (override in subclasses) */
-    protected onUpdate(_deltaTime: number) {}
+    protected onUpdate(_deltaTime: number) { }
 
     /** Checks if this object is a descendant of another */
     isDescendantOf(target: GameObject): boolean {

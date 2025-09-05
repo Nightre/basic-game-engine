@@ -54,6 +54,14 @@ class Tree extends Ysort {
     }
 }
 
+class Tips extends GameObject {
+    render(ctx: CanvasRenderingContext2D): void {
+        ctx.fillStyle = "#000"
+        ctx.font = "16px Arial"
+        ctx.textBaseline = "top"
+        ctx.fillText("WASD to move", 10, 10)
+    }
+}
 
 const game = new Game()
 game.start({
@@ -83,3 +91,9 @@ for (let index = 0; index < 1000; index++) {
 
     ysortNode.addChild(tree)
 }
+
+const uiCamera = new Camera(game, false)
+const tips = new Tips(game)
+tips.setCamera(uiCamera)
+
+game.stage.addChild(tips)
