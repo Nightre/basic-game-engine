@@ -2,49 +2,63 @@ import type { Game } from "./game";
 import { GameObject } from "./game-object";
 import { Vec2, Matrix2D } from "./math";
 
-/**
- * A camera that defines the view transformation for rendering the scene.
- * 
- * The camera inherits from {@link GameObject}, meaning it has position,
- * rotation, and scale in world space. Its view matrix is the inverse of its
- * world transform, optionally combined with zoom and viewport centering.
- */
 export class Camera extends GameObject {
-    /** Zoom factor of the camera. Default is `1` (no zoom). */
     public zoom: number = 1;
-
-    /**
-     * Cached view matrix.  
-     * The view matrix is the inverse of the camera's world transform,
-     * combined with zoom and viewport offset.
-     */
     private _viewMatrix: Matrix2D = new Matrix2D();
 
-    /**
-     * Whether the camera should center the view on the viewport.
-     * If `true`, the camera will offset by `(viewportWidth/2, viewportHeight/2)`.
-     */
-    center: boolean
+    private limitEnabled: boolean = false;
+    public limit: { left: number; up: number; right: number; down: number } = {
+        left: 0,
+        up: 0,
+        right: 0,
+        down: 0,
+    };
+
+    private cameraPosition: Vec2 = new Vec2(0, 0);
+    private smoothSpeed: number = 0.15;
+    private useSmooth: boolean = false;
+
+    center: boolean;
+    private limitDiff: Vec2 = new Vec2(0, 0);
 
     constructor(game: Game, center: boolean = true) {
-        super(game)
-        this.center = center
+        super(game);
+        this.center = center;
     }
 
-    /**
-     * Computes and returns the view matrix used for rendering.  
-     * The matrix is built by inverting the camera's world transform,
-     * applying zoom, and optionally centering based on the viewport size.
-     *
-     * @returns The current view matrix.
-     */
+    /** 开启或关闭相机限制 */
+    public enableLimit(enabled: boolean): void {
+        this.limitEnabled = enabled;
+    }
+
+    /** 设置相机限制范围 */
+    public setLimit(left: number, up: number, right: number, down: number): void {
+        this.limit = { left, up, right, down };
+    }
+
+    public enableSmooth(enabled: boolean, smoothSpeed: number = 5): void {
+        this.useSmooth = enabled;
+        this.smoothSpeed = smoothSpeed;
+    }
+
     public getViewMatrix(): Matrix2D {
-        const viewportWidth = this.game.scaler.width;
-        const viewportHeight = this.game.scaler.height;
+        const viewportWidth = this.game.scaler.logicalWidth;
+        const viewportHeight = this.game.scaler.logicalHeight;
 
+
+        // const savePosition = this.position.clone()
+
+        // if (this.useSmooth) {
+        //     this.globalPosition = this.cameraPosition.add(this.position)
+        // }
+        const local = this.globalToLocalPosition(this.cameraPosition)
         this.updateTransform();
+        //this.position = savePosition
 
-        this._viewMatrix.copyFrom(this.worldTransform).invert();
+        this._viewMatrix.copyFrom(this.worldTransform)
+            .translate(this.limitDiff.x, this.limitDiff.y)
+            .translate(local.x, local.y)
+            .invert();
         this._viewMatrix.prepend(new Matrix2D(this.zoom, 0, 0, this.zoom, 0, 0));
 
         if (this.center) {
@@ -54,28 +68,72 @@ export class Camera extends GameObject {
         return this._viewMatrix;
     }
 
-    /**
-     * Converts a point from **screen coordinates** to **world coordinates**.
-     *
-     * @param screenPos - The position in screen space (pixels).
-     * @returns The equivalent point in world space.
-     */
     public screenToWorld(screenPos: Vec2): Vec2 {
         const inverseViewMatrix = this.getViewMatrix().clone().invert();
-        const worldPoint = inverseViewMatrix.transformVec2(screenPos);
-
-        return worldPoint;
+        return inverseViewMatrix.transformVec2(screenPos);
     }
 
-    /**
-     * Converts a point from **world coordinates** to **screen coordinates**.
-     *
-     * @param worldPos - The position in world space.
-     * @returns The equivalent point in screen space (pixels).
-     */
     public worldToScreen(worldPos: Vec2): Vec2 {
         const viewMatrix = this.getViewMatrix();
-        const screenPoint = viewMatrix.transformVec2(worldPos);
-        return screenPoint;
+        return viewMatrix.transformVec2(worldPos);
+    }
+
+    protected onUpdate(_deltaTime: number): void {
+        this.limitDiff.set(0, 0);
+        let globalPos = this.globalPosition;
+
+        if (this.useSmooth) {
+            this.cameraPosition = this.cameraPosition.add(
+                this.globalPosition.clone().subtract(this.cameraPosition).multiplyScalar(this.smoothSpeed * _deltaTime)
+            )
+            globalPos = this.cameraPosition
+        }
+
+        if (this.limitEnabled) {
+            const viewportWidth = this.game.scaler.logicalWidth;
+            const viewportHeight = this.game.scaler.logicalHeight;
+
+
+            const viewport = new Vec2(viewportWidth, viewportHeight);
+            const leftTop = globalPos.subtract(viewport.multiplyScalar(0.5));
+            const rightDown = globalPos.add(viewport.multiplyScalar(0.5));
+
+            const leftTopLimit = new Vec2(this.limit.left, this.limit.up);
+            const rightDownLimit = new Vec2(this.limit.right, this.limit.down);
+
+            const limitWidth = rightDownLimit.x - leftTopLimit.x;
+            const limitHeight = rightDownLimit.y - leftTopLimit.y;
+
+            const viewCenter = new Vec2(
+                (leftTop.x + rightDown.x) / 2,
+                (leftTop.y + rightDown.y) / 2
+            );
+            const limitCenter = new Vec2(
+                (this.limit.left + this.limit.right) / 2,
+                (this.limit.up + this.limit.down) / 2
+            );
+
+            if (viewportWidth > limitWidth) {
+                this.limitDiff.x += limitCenter.x - viewCenter.x;
+            } else {
+                if (leftTop.x < leftTopLimit.x) {
+                    this.limitDiff.x += leftTopLimit.x - leftTop.x;
+                }
+                if (rightDown.x > rightDownLimit.x) {
+                    this.limitDiff.x += rightDownLimit.x - rightDown.x;
+                }
+            }
+
+            if (viewportHeight > limitHeight) {
+                this.limitDiff.y += limitCenter.y - viewCenter.y;
+            } else {
+                if (leftTop.y < leftTopLimit.y) {
+                    this.limitDiff.y += leftTopLimit.y - leftTop.y;
+                }
+                if (rightDown.y > rightDownLimit.y) {
+                    this.limitDiff.y += rightDownLimit.y - rightDown.y;
+                }
+            }
+        }
     }
 }

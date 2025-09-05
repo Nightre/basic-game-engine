@@ -7,8 +7,8 @@ import './style.css'
 const game = new Game()
 game.start({
     canvas: document.getElementById("canvas") as HTMLCanvasElement,
-    width: 1600,
-    height: 800,
+    width: 600,
+    height: 600,
     scale: ScaleMode.EXPAND
 })
 const asset = game.assets
@@ -25,32 +25,32 @@ asset.on("complete", () => {
     const player = new Player(game)
     ysortNode.addChild(player)
 
-    game.stage.addChild(new Debug(game))
+    //game.stage.addChild(new Debug(game))
     game.stage.addChild(new C(game))
 
-    for (let index = 0; index < 100; index++) {
+    for (let index = 0; index < 1000; index++) {
         const tree = new Tree(game)
-        tree.position.set(Math.random() * 500, Math.random() * 500)
+        tree.position.set(Math.random() * 2000, Math.random() * 2000)
 
         ysortNode.addChild(tree)
     }
 })
 
-class Debug extends GameObject {
-    constructor(game: Game) {
-        super(game)
-        const c = new Camera(game, true)
-        this.game.stage.addChild(c)
-        this.camera = c
-    }
-    render(_ctx: CanvasRenderingContext2D): void {
-        _ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Green, semi-transparent
-        _ctx.lineWidth = 4;
-        _ctx.strokeRect(
-            -this.game.scaler.width / 2, -this.game.scaler.height / 2,
-            this.game.scaler.width, this.game.scaler.height)
-    }
-}
+// class Debug extends GameObject {
+//     constructor(game: Game) {
+//         super(game)
+//         const c = new Camera(game, true)
+//         this.game.stage.addChild(c)
+//         this.camera = c
+//     }
+//     render(_ctx: CanvasRenderingContext2D): void {
+//         _ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Green, semi-transparent
+//         _ctx.lineWidth = 4;
+//         _ctx.strokeRect(
+//             -this.game.scaler.width / 2, -this.game.scaler.height / 2,
+//             this.game.scaler.width, this.game.scaler.height)
+//     }
+// }
 
 class Ysort extends GameObject {
     offset = 0
@@ -60,12 +60,16 @@ class Ysort extends GameObject {
 }
 
 class Player extends Ysort {
-    speed: number = 200
+    speed: number = 500
     offset: number = 32
     constructor(game: Game) {
         super(game)
         const camera = new Camera(game)
         camera.position.set(16, 16)
+        camera.setLimit(0, 0, 2000, 2000)
+        camera.enableLimit(true)
+        camera.enableSmooth(true, 3)
+
         this.addChild(camera)
         game.setMainCamera(camera)
     }

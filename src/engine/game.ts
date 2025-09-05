@@ -119,8 +119,8 @@ export class CanvasScaler {
         const physX = cssX * this.dpr;
         const physY = cssY * this.dpr;
 
-        const localX = physX - this.offsetX;
-        const localY = physY - this.offsetY;
+        const localX = physX;
+        const localY = physY;
 
         const screenX = localX / this.scale;
         const screenY = localY / this.scale;
@@ -219,10 +219,6 @@ export class Game {
 
             const m = finalTransform;
             const scale = this.scaler.scale;
-
-            const offsetX = this.scaler.offsetX;
-            const offsetY = this.scaler.offsetY;
-
             const finalScale = scale;
 
             this.ctx.setTransform(
@@ -230,8 +226,8 @@ export class Game {
                 m.b * finalScale,
                 m.c * finalScale,
                 m.d * finalScale,
-                m.tx * finalScale + offsetX,
-                m.ty * finalScale + offsetY
+                m.tx * finalScale,
+                m.ty * finalScale 
             );
 
             obj.render(this.ctx);

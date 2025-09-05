@@ -3,9 +3,9 @@ import type { Game } from "./game";
 import { Matrix2D, Vec2 } from "./math";
 
 export class GameObject {
-    private _position: Vec2 = new Vec2();
-    private _scale: Vec2 = new Vec2(1, 1);
-    private _rotation: number = 0;
+    protected _position: Vec2 = new Vec2();
+    protected _scale: Vec2 = new Vec2(1, 1);
+    protected _rotation: number = 0;
 
     public visible: boolean = true;
 
@@ -18,7 +18,7 @@ export class GameObject {
     public localTransform: Matrix2D = new Matrix2D();
     public worldTransform: Matrix2D = new Matrix2D();
 
-    private _isDirty: boolean = true;
+    protected _isDirty: boolean = true;
 
     public camera: Camera | null = null;
     public game: Game
