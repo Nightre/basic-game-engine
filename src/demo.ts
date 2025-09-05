@@ -4,72 +4,6 @@ import { GameObject } from './engine/game-object'
 import { drawSprite } from './engine/utils'
 import './style.css'
 
-
-const game = new Game()
-game.start({
-    canvas: document.getElementById("canvas") as HTMLCanvasElement,
-    width: 600,
-    height: 600,
-    scale: ScaleMode.EXPAND
-})
-const asset = game.assets
-const input = game.input
-
-asset.loadAll([
-    { url: "./vite.svg", name: "player" },
-    { url: "./tree.svg", name: "tree" },
-])
-asset.on("complete", () => {
-    const ysortNode = new GameObject(game)
-    game.stage.addChild(ysortNode)
-
-    const player = new Player(game)
-    ysortNode.addChild(player)
-
-    //game.stage.addChild(new Debug(game))
-    //game.stage.addChild(new C(game))
-
-    let t = new T()
-    t.position.x = 100
-    t.position.y = 100
-    game.stage.addChild(t)
-
-    let t2 = new T()
-    t2.position.x = 100
-    t2.position.y = 50
-    t.addChild(t2)
-
-    let t3 = new T()
-    t3.position.x = 100
-    t3.position.y = 50
-    t2.addChild(t3)
-
-    t3.addChild(new C(game))
-
-    for (let index = 0; index < 1000; index++) {
-        const tree = new Tree(game)
-        tree.position.set(Math.random() * 2000, Math.random() * 2000)
-
-        ysortNode.addChild(tree)
-    }
-})
-
-// class Debug extends GameObject {
-//     constructor(game: Game) {
-//         super(game)
-//         const c = new Camera(game, true)
-//         this.game.stage.addChild(c)
-//         this.camera = c
-//     }
-//     render(_ctx: CanvasRenderingContext2D): void {
-//         _ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Green, semi-transparent
-//         _ctx.lineWidth = 4;
-//         _ctx.strokeRect(
-//             -this.game.scaler.width / 2, -this.game.scaler.height / 2,
-//             this.game.scaler.width, this.game.scaler.height)
-//     }
-// }
-
 class Ysort extends GameObject {
     offset = 0
     protected onUpdate(_deltaTime: number): void {
@@ -78,7 +12,7 @@ class Ysort extends GameObject {
 }
 
 class Player extends Ysort {
-    speed: number = 500
+    speed: number = 100
     offset: number = 32
     constructor(game: Game) {
         super(game)
@@ -101,12 +35,13 @@ class Player extends Ysort {
     }
 }
 
-class C extends GameObject {
+class Mouse extends GameObject {
     protected onUpdate(_deltaTime: number): void {
         this.position = this.game.input.getMouseLocal(this.parent!)
     }
     render(ctx: CanvasRenderingContext2D): void {
-        ctx.drawImage(asset.get("player")!, 0, 0)
+        drawSprite(ctx, "player")
+        // or : ctx.drawImage(asset.get("player")!, 0, 0)
     }
 }
 
@@ -114,15 +49,37 @@ class Tree extends Ysort {
     offset: number = 58
 
     render(ctx: CanvasRenderingContext2D): void {
-        ctx.drawImage(asset.get("tree")!, 0, 0)
+        drawSprite(ctx, "tree")
+        // or : ctx.drawImage(asset.get("player")!, 0, 0)
     }
 }
 
-class T extends GameObject {
-    protected onUpdate(dt: number): void {
-        this.rotation += Math.PI * 0.5 * dt
-    }
-    render(_ctx: CanvasRenderingContext2D): void {
-        drawSprite(_ctx, "player", undefined, true)
-    }
+
+const game = new Game()
+game.start({
+    canvas: document.getElementById("canvas") as HTMLCanvasElement,
+    width: 600,
+    height: 600,
+    scale: ScaleMode.EXPAND
+})
+const asset = game.assets
+const input = game.input
+
+await asset.loadAll([
+    { url: "./vite.svg", name: "player" },
+    { url: "./tree.svg", name: "tree" },
+])
+
+const ysortNode = new GameObject(game)
+game.stage.addChild(ysortNode)
+
+const player = new Player(game)
+ysortNode.addChild(player)
+game.stage.addChild(new Mouse(game))
+
+for (let index = 0; index < 1000; index++) {
+    const tree = new Tree(game)
+    tree.position.set(Math.random() * 2000, Math.random() * 2000)
+
+    ysortNode.addChild(tree)
 }

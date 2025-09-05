@@ -5,7 +5,7 @@ export const drawSprite = (ctx: CanvasRenderingContext2D, assets: string, offset
     // @ts-ignore
     game = (game ?? window.game) as Game
 
-    const image = game.assets.get(assets)!
+    const image = game.assets.get<ImageBitmap>(assets)!
     if (center) {
         const imageOffset = new Vec2(image.width, image.height).divideScalar(-2)
         if (offset) {

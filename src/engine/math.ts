@@ -358,12 +358,6 @@ export class Matrix2D {
     }
 
     transformVec2(vec: Vec2): Vec2 {
-        const x = vec.x
-        const y = vec.y
-
-        return new Vec2(
-            this.a * x + this.c * y + this.tx,
-            this.b * x + this.d * y + this.ty
-        );
+        return this.transformPoint(vec.x, vec.y)
     }
 }

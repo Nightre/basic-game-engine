@@ -1,13 +1,44 @@
-# mycanvas
-我用canvas做游戏用的起始模板
-最基础的canvas游戏引擎，包含：
+# Basic Canvas Game Engine
 
-相机(limit，smoth position)，层级变换，输入，资源，canvas大小, zindex（全局排序，child排序）
+A minimal game engine framework based on the native Canvas API. Focused on simple implementation of core features, without complex rendering pipelines and additional dependencies.
 
-运行demo
+## Features
 
-```
+- **Camera System**
+  - Position limits
+  - Smooth follow
+  - Viewport transformations
+- **Scene Graph**
+  - Hierarchical transformations
+  - Global/Local coordinate systems
+  - Z-index ordering (global and child sorting)
+- **Input Management**
+  - Keyboard and mouse handling
+  - Polling and event-based input
+- **Asset Management**
+  - Asynchronous resource loading
+  - Progress tracking
+- **Canvas Scaling**
+  - Device pixel ratio support
+  - Responsive container sizing
+- **Basic Game Loop**
+  - Time-based updates
+  - Flexible rendering pipeline
+
+## Quick Start
+
+Run the demo:
+
+```bash
+yarn install
 yarn dev
 ```
 
-![demo.ts](./src/demo.ts)
+## Demo Overview
+
+Check [demo.ts](./src/demo.ts) for a complete example showcasing:
+- Camera following with smooth movement and boundaries
+- Y-axis depth sorting
+- Mouse interaction
+- Multiple game objects
+- Basic sprite rendering

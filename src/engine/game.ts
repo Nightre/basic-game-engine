@@ -1,41 +1,66 @@
+
 import { Camera } from "./camera-object";
 import { GameObject } from "./game-object";
 import { Matrix2D, Vec2 } from "./math";
 import { AssetsManager } from "./assets";
 import { InputManager } from "./input";
 
+/**
+ * Scaling modes for the canvas.
+ * - `IGNORE`: Uses the physical pixel size directly, ignoring logical scaling.
+ * - `EXPAND`: Expands or shrinks the logical viewport to fit parent while maintaining aspect ratio.
+ */
 export enum ScaleMode {
     IGNORE,
     EXPAND,
 }
 
+/**
+ * Manages scaling of the HTMLCanvasElement to fit the parent container
+ * while keeping a logical coordinate system for the game.
+ *
+ * Handles device pixel ratio (DPR), logical size, physical size,
+ * and calculates transform scale and offsets.
+ */
 export class CanvasScaler {
+    /** The canvas element being managed */
     canvas: HTMLCanvasElement;
+
+    /** Base width of the game */
     public width: number;
+    /** Base height of the game */
     public height: number;
 
-    // 逻辑尺寸：游戏世界认为的画布大小
+    /** Logical dimensions: the coordinate system used in game logic */
     public logicalWidth: number;
     public logicalHeight: number;
 
-    // 视口物理尺寸：画布在屏幕上的实际像素数 (包含DPR)
+    /** Physical pixel dimensions (including DPR) */
     public physicsWidth: number;
     public physicsHeight: number;
 
+    /** CSS pixel dimensions of the canvas element */
     public canvasWidth: number;
     public canvasHeight: number;
 
+    /** Device pixel ratio */
     public dpr: number = 1;
+    /** Scaling mode */
     public mode: ScaleMode;
 
-    // logical 需要缩放多少达到 physics
-    public scale: number = 1
+    /** Scale factor from logical to physical pixels */
+    public scale: number = 1;
 
-
-    // 物理大小的 offset
+    /** Offsets in physical pixels for centering */
     public offsetX: number = 0;
     public offsetY: number = 0;
 
+    /**
+     * @param canvas HTMLCanvasElement to manage
+     * @param baseWidth Logical base width
+     * @param baseHeight Logical base height
+     * @param mode Scaling mode (default: EXPAND)
+     */
     constructor(canvas: HTMLCanvasElement, baseWidth: number, baseHeight: number, mode: ScaleMode = ScaleMode.EXPAND) {
         this.canvas = canvas;
         this.width = baseWidth;
@@ -55,11 +80,13 @@ export class CanvasScaler {
         window.addEventListener("resize", () => this.resize());
     }
 
+    /** Change the scale mode and trigger resize */
     setMode(mode: ScaleMode) {
         this.mode = mode;
         this.resize();
     }
 
+    /** Resize canvas to match parent container and DPR */
     resize() {
         const parent = this.canvas.parentElement || document.body;
         const parentWidth = parent.clientWidth;
@@ -73,8 +100,8 @@ export class CanvasScaler {
         this.canvas.style.width = parentWidth + "px";
         this.canvas.style.height = parentHeight + "px";
 
-        this.canvasHeight = parentHeight
-        this.canvasWidth = parentWidth
+        this.canvasHeight = parentHeight;
+        this.canvasWidth = parentWidth;
 
         this.physicsWidth = Math.round(parentWidth * this.dpr);
         this.physicsHeight = Math.round(parentHeight * this.dpr);
@@ -90,8 +117,8 @@ export class CanvasScaler {
                 }
                 break;
             case ScaleMode.IGNORE:
-                this.logicalWidth = this.physicsWidth
-                this.logicalHeight = this.physicsHeight
+                this.logicalWidth = this.physicsWidth;
+                this.logicalHeight = this.physicsHeight;
                 break;
             default:
                 break;
@@ -111,6 +138,9 @@ export class CanvasScaler {
         this.offsetY = (this.physicsHeight - newHeight) / 2;
     }
 
+    /**
+     * Convert CSS pixel coordinates (e.g. from mouse events) to logical screen coordinates.
+     */
     cssToScreen(cssPos: Vec2) {
         const rect = this.canvas.getBoundingClientRect();
         const cssX = cssPos.x - rect.left;
@@ -119,14 +149,14 @@ export class CanvasScaler {
         const physX = cssX * this.dpr;
         const physY = cssY * this.dpr;
 
-        const localX = physX;
-        const localY = physY;
-
-        const screenX = localX / this.scale;
-        const screenY = localY / this.scale;
+        const screenX = physX / this.scale;
+        const screenY = physY / this.scale;
         return new Vec2(screenX, screenY);
     }
 
+    /**
+     * Get the 2D rendering context with high-quality smoothing enabled.
+     */
     getContext() {
         const ctx = this.canvas.getContext("2d");
         if (ctx) {
@@ -137,6 +167,7 @@ export class CanvasScaler {
     }
 }
 
+/** Options for initializing a {@link Game}. */
 interface IGameOptions {
     width: number,
     height: number,
@@ -144,29 +175,45 @@ interface IGameOptions {
     scale?: ScaleMode
 }
 
+/**
+ * Core game engine class.
+ * Manages stage (scene graph), main loop, rendering, assets, input, and scaling.
+ */
 export class Game {
 
+    /** Canvas rendering context */
     private ctx!: CanvasRenderingContext2D | null;
     private lastTime: number = 0;
 
+    /** Root node of the scene graph */
     public stage: GameObject;
+    /** Queue of objects to render each frame */
     private renderQueue: GameObject[] = [];
 
+    /** Main camera */
     mainCamera: Camera = new Camera(this);
-    alive: boolean = true
+    /** Whether the game loop is alive */
+    alive: boolean = true;
 
-    assets = new AssetsManager()
-    input!: InputManager
+    /** Asset manager */
+    assets = new AssetsManager();
+    /** Input manager */
+    input!: InputManager;
+    /** Canvas scaler */
     scaler!: CanvasScaler;
 
     constructor() {
         this.stage = new GameObject(this);
         //@ts-ignore
-        window.game = this
+        window.game = this;
     }
+
+    /** Set a custom main camera */
     setMainCamera(camera: Camera) {
-        this.mainCamera = camera
+        this.mainCamera = camera;
     }
+
+    /** Start the game loop with given options */
     start(options: IGameOptions) {
         this.scaler = new CanvasScaler(
             options.canvas,
@@ -174,13 +221,14 @@ export class Game {
             options.height,
             options.scale
         );
-        this.input = new InputManager(this)
+        this.input = new InputManager(this);
 
         this.ctx = this.scaler.getContext();
         this.lastTime = performance.now();
         this.loop(this.lastTime);
     }
 
+    /** Main game loop (update, physics, render) */
     loop(currentTime: number) {
         if (!this.ctx || !this.scaler) return;
 
@@ -190,12 +238,12 @@ export class Game {
         this.renderQueue = [];
 
         // 输入更新
-        this.input.update()
+        this.input.update();
 
-        // 更新
+        // 更新对象
         this.stage.update(deltaTime, this.renderQueue);
 
-        // 物理
+        // 物理计算
         this.stage.physics(deltaTime);
 
         // 渲染
@@ -205,12 +253,12 @@ export class Game {
         for (const obj of this.renderQueue) {
             this.ctx.save();
 
-            const camera = obj.getCamera();
+            const camera = obj.camera;
 
-            let finalTransform: Matrix2D; // 最终的变换
+            let finalTransform: Matrix2D;
 
             if (camera) {
-                // 有摄像机就 摄像机Transform dot obj.worldTransform
+                // Camera view matrix * world transform
                 const viewMatrix = camera.getViewMatrix();
                 finalTransform = viewMatrix.clone().append(obj.worldTransform);
             } else {
@@ -240,15 +288,17 @@ export class Game {
         }
     }
 
+    /** Destroy the game and release resources */
     destroy() {
-        this.alive = false
+        this.alive = false;
         if (this.stage) {
-            this.stage.destroy()
+            this.stage.destroy();
         }
     }
 
+    /** Replace the current stage with a new one */
     changeStage(stage: GameObject) {
-        this.stage.destroy()
-        this.stage = stage
+        this.stage.destroy();
+        this.stage = stage;
     }
 }
