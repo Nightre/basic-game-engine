@@ -2,7 +2,7 @@
 export class Vec2 {
     protected _x!: number;
     protected _y!: number;
-    onChangeFn?: () => void;
+    protected onChangeFn?: () => void;
 
     get x() {
         return this._x;

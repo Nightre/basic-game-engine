@@ -8,8 +8,6 @@ export enum ScaleMode {
     IGNORE,
     EXPAND,
     KEEP,
-    KEEP_WIDTH,
-    KEEP_HEIGHT
 }
 
 export class CanvasScaler {
@@ -28,6 +26,10 @@ export class CanvasScaler {
     public dpr: number = 1;
     public mode: ScaleMode;
 
+    public scale: number = 1
+    public offsetX: number = 0;
+    public offsetY: number = 0;
+
     constructor(canvas: HTMLCanvasElement, baseWidth: number, baseHeight: number, mode: ScaleMode = ScaleMode.EXPAND) {
         this.canvas = canvas;
         this.baseWidth = baseWidth;
@@ -39,6 +41,7 @@ export class CanvasScaler {
 
         this.viewportWidth = baseWidth;
         this.viewportHeight = baseHeight;
+
 
         this.resize();
         window.addEventListener("resize", () => this.resize());
@@ -56,112 +59,56 @@ export class CanvasScaler {
 
         this.dpr = window.devicePixelRatio || 1;
 
-        // 根据不同模式计算
-        switch (this.mode) {
-            case ScaleMode.IGNORE:
-                this.logicalWidth = this.baseWidth;
-                this.logicalHeight = this.baseHeight;
+        const baseRatioExp = this.baseWidth / this.baseHeight;
+        const parentRatioExp = parentWidth / parentHeight;
 
-                this.canvas.style.width = this.baseWidth + "px";
-                this.canvas.style.height = this.baseHeight + "px";
-
-                this.viewportWidth = Math.round(this.baseWidth * this.dpr);
-                this.viewportHeight = Math.round(this.baseHeight * this.dpr);
-                break;
-
-            case ScaleMode.KEEP: // 保持宽高比，会有黑边
-                this.logicalWidth = this.baseWidth;
-                this.logicalHeight = this.baseHeight;
-
-                const baseRatio = this.baseWidth / this.baseHeight;
-                const parentRatio = parentWidth / parentHeight;
-
-                let newCssWidth: number;
-                let newCssHeight: number;
-
-                if (parentRatio > baseRatio) {
-                    // 容器更宽，以高为准
-                    newCssHeight = parentHeight;
-                    newCssWidth = parentHeight * baseRatio;
-                } else {
-                    // 容器更高，以宽为准
-                    newCssWidth = parentWidth;
-                    newCssHeight = parentWidth / baseRatio;
-                }
-
-                this.canvas.style.width = newCssWidth + "px";
-                this.canvas.style.height = newCssHeight + "px";
-
-                this.viewportWidth = Math.round(newCssWidth * this.dpr);
-                this.viewportHeight = Math.round(newCssHeight * this.dpr);
-                break;
-
-            case ScaleMode.KEEP_WIDTH:
-                this.logicalWidth = this.baseWidth;
-                this.logicalHeight = this.baseWidth / (parentWidth / parentHeight);
-
-                this.canvas.style.width = parentWidth + "px";
-                this.canvas.style.height = parentHeight + "px";
-
-                this.viewportWidth = Math.round(parentWidth * this.dpr);
-                this.viewportHeight = Math.round(parentHeight * this.dpr);
-                break;
-
-            case ScaleMode.KEEP_HEIGHT:
-                this.logicalHeight = this.baseHeight;
-                this.logicalWidth = this.baseHeight * (parentWidth / parentHeight);
-
-                this.canvas.style.width = parentWidth + "px";
-                this.canvas.style.height = parentHeight + "px";
-
-                this.viewportWidth = Math.round(parentWidth * this.dpr);
-                this.viewportHeight = Math.round(parentHeight * this.dpr);
-                break;
-
-            case ScaleMode.EXPAND: // 你的原始逻辑
-            default:
-                const baseRatioExp = this.baseWidth / this.baseHeight;
-                const parentRatioExp = parentWidth / parentHeight;
-
-                if (parentRatioExp > baseRatioExp) {
-                    this.logicalHeight = this.baseHeight;
-                    this.logicalWidth = this.baseHeight * parentRatioExp;
-                } else {
-                    this.logicalWidth = this.baseWidth;
-                    this.logicalHeight = this.baseWidth / parentRatioExp;
-                }
-
-                this.canvas.style.width = parentWidth + "px";
-                this.canvas.style.height = parentHeight + "px";
-
-                this.viewportWidth = Math.round(parentWidth * this.dpr);
-                this.viewportHeight = Math.round(parentHeight * this.dpr);
-                break;
+        if (parentRatioExp > baseRatioExp) {
+            this.logicalHeight = this.baseHeight;
+            this.logicalWidth = this.baseHeight * parentRatioExp;
+        } else {
+            this.logicalWidth = this.baseWidth;
+            this.logicalHeight = this.baseWidth / parentRatioExp;
         }
+
+        this.canvas.style.width = parentWidth + "px";
+        this.canvas.style.height = parentHeight + "px";
+
+        this.viewportWidth = Math.round(parentWidth * this.dpr);
+        this.viewportHeight = Math.round(parentHeight * this.dpr);
 
         this.canvas.width = this.viewportWidth;
         this.canvas.height = this.viewportHeight;
+
+        const scaleX = parentWidth / this.baseWidth;
+        const scaleY = parentHeight / this.baseHeight;
+        this.scale = Math.min(scaleX, scaleY);
+
+        const newWidth = this.baseWidth * this.scale;
+        const newHeight = this.baseHeight * this.scale;
+
+        this.offsetX = (parentWidth - newWidth) / 2;
+        this.offsetY = (parentHeight - newHeight) / 2;
     }
 
     cssToScreen(cssPos: Vec2) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = (cssPos.x - rect.left) * this.dpr;
-        const y = (cssPos.y - rect.top) * this.dpr;
+        const x = (cssPos.x - rect.left - this.offsetX) / this.scale;
+        const y = (cssPos.y - rect.top - this.offsetY) / this.scale;
         return new Vec2(x, y);
     }
 
     getContext() {
         const ctx = this.canvas.getContext("2d");
         if (ctx) {
-            ctx.imageSmoothingEnabled = false;
-            ctx.imageSmoothingQuality = "low";
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = "high";
         }
         return ctx;
     }
 }
 
 interface IGameOptions {
-    wdith: number,
+    width: number,
     height: number,
     canvas: HTMLCanvasElement,
     scale?: ScaleMode
@@ -179,7 +126,7 @@ export class Game {
     alive: boolean = true
 
     assets = new AssetsManager()
-    input = new InputManager(this)
+    input!: InputManager
     scaler!: CanvasScaler;
 
     constructor() {
@@ -187,14 +134,18 @@ export class Game {
         //@ts-ignore
         window.game = this
     }
-
+    setMainCamera(camera: Camera) {
+        this.mainCamera = camera
+    }
     start(options: IGameOptions) {
         this.scaler = new CanvasScaler(
             options.canvas,
-            options.wdith,
+            options.width,
             options.height,
             options.scale
         );
+        this.input = new InputManager(this)
+
         this.ctx = this.scaler.getContext();
         this.lastTime = performance.now();
         this.loop(this.lastTime);
@@ -237,7 +188,22 @@ export class Game {
             }
 
             const m = finalTransform;
-            this.ctx.setTransform(m.a, m.b, m.c, m.d, m.tx, m.ty);
+            const dpr = this.scaler.dpr
+            const scale = this.scaler.scale;
+
+            const offsetX = this.scaler.offsetX;
+            const offsetY = this.scaler.offsetY;
+
+            const finalScale = scale * dpr;
+
+            this.ctx.setTransform(
+                m.a * finalScale,
+                m.b * finalScale,
+                m.c * finalScale,
+                m.d * finalScale,
+                m.tx * finalScale + offsetX * dpr,
+                m.ty * finalScale + offsetY * dpr
+            );
 
             obj.render(this.ctx);
 

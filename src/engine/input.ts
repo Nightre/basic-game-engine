@@ -89,8 +89,7 @@ export class InputManager {
         canvas.addEventListener('mousemove', this.handleMouseMove = (event: MouseEvent) => {
             const cssPos = new Vec2(event.clientX, event.clientY);
             const screenPos = this.scaler.cssToScreen(cssPos);
-            const invViewMatrix = this.game.mainCamera.getViewMatrix().clone().invert();
-            const worldPoint = invViewMatrix.transformPoint(screenPos.x, screenPos.y);
+            const worldPoint = this.game.mainCamera.screenToWorld(screenPos)
             this.mousePosition.set(worldPoint);
 
             this.emitter.emit('mousemove', { position: this.mousePosition.clone(), event });

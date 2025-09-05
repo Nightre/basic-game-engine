@@ -8,7 +8,9 @@ export class GameObject {
     private _rotation: number = 0;
 
     public visible: boolean = true;
+
     public zIndex: number = 0;
+    public childIndex: number = 0;
 
     public parent: GameObject | null = null;
     public children: GameObject[] = [];
@@ -239,7 +241,7 @@ export class GameObject {
             renderQueue.push(this);
         }
 
-        for (const child of this.children) {
+        for (const child of this.children.sort((a, b) => a.childIndex - b.childIndex)) {
             child.update(deltaTime, renderQueue);
         }
     }

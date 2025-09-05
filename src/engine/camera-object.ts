@@ -39,8 +39,8 @@ export class Camera extends GameObject {
      * @returns The current view matrix.
      */
     public getViewMatrix(): Matrix2D {
-        const viewportWidth = this.game.scaler.logicalWidth;
-        const viewportHeight = this.game.scaler.logicalHeight;
+        const viewportWidth = this.game.scaler.baseWidth;
+        const viewportHeight = this.game.scaler.baseHeight;
 
         this.updateTransform();
 
