@@ -227,7 +227,7 @@ export class Game {
                 m.c * finalScale,
                 m.d * finalScale,
                 m.tx * finalScale,
-                m.ty * finalScale 
+                m.ty * finalScale
             );
 
             obj.render(this.ctx);
@@ -245,5 +245,10 @@ export class Game {
         if (this.stage) {
             this.stage.destroy()
         }
+    }
+
+    changeStage(stage: GameObject) {
+        this.stage.destroy()
+        this.stage = stage
     }
 }

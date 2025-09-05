@@ -52,6 +52,7 @@ export class Camera extends GameObject {
 
         if (this.useSmooth) {
             const local = this.globalToLocalPosition(this.cameraPosition)
+            this.globalPosition
             this._viewMatrix.translate(local.x, local.y)
         }
 

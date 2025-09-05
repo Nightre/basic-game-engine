@@ -1,6 +1,7 @@
 import { Camera } from './engine/camera-object'
 import { Game, ScaleMode } from './engine/game'
 import { GameObject } from './engine/game-object'
+import { drawSprite } from './engine/utils'
 import './style.css'
 
 
@@ -26,7 +27,24 @@ asset.on("complete", () => {
     ysortNode.addChild(player)
 
     //game.stage.addChild(new Debug(game))
-    game.stage.addChild(new C(game))
+    //game.stage.addChild(new C(game))
+
+    let t = new T()
+    t.position.x = 100
+    t.position.y = 100
+    game.stage.addChild(t)
+
+    let t2 = new T()
+    t2.position.x = 100
+    t2.position.y = 50
+    t.addChild(t2)
+
+    let t3 = new T()
+    t3.position.x = 100
+    t3.position.y = 50
+    t2.addChild(t3)
+
+    t3.addChild(new C(game))
 
     for (let index = 0; index < 1000; index++) {
         const tree = new Tree(game)
@@ -100,4 +118,11 @@ class Tree extends Ysort {
     }
 }
 
-
+class T extends GameObject {
+    protected onUpdate(dt: number): void {
+        this.rotation += Math.PI * 0.5 * dt
+    }
+    render(_ctx: CanvasRenderingContext2D): void {
+        drawSprite(_ctx, "player", undefined, true)
+    }
+}

@@ -257,31 +257,34 @@ export class Matrix2D {
         return this;
     }
 
-    // this = this * other
     append(other: Matrix2D): this {
         const a1 = this.a, b1 = this.b, c1 = this.c, d1 = this.d, tx1 = this.tx, ty1 = this.ty;
         const a2 = other.a, b2 = other.b, c2 = other.c, d2 = other.d, tx2 = other.tx, ty2 = other.ty;
 
-        this.a = a1 * a2 + b1 * c2;
-        this.b = a1 * b2 + b1 * d2;
-        this.c = c1 * a2 + d1 * c2;
-        this.d = c1 * b2 + d1 * d2;
-        this.tx = a1 * tx2 + b1 * ty2 + tx1;
-        this.ty = c1 * tx2 + d1 * ty2 + ty1;
+        // 按你的 transformPoint 约定：x' = a*x + c*y + tx; y' = b*x + d*y + ty
+        this.a = a1 * a2 + c1 * b2;
+        this.c = a1 * c2 + c1 * d2;
+        this.tx = a1 * tx2 + c1 * ty2 + tx1;
+
+        this.b = b1 * a2 + d1 * b2;
+        this.d = b1 * c2 + d1 * d2;
+        this.ty = b1 * tx2 + d1 * ty2 + ty1;
+
         return this;
     }
 
-    // this = other * this
     prepend(other: Matrix2D): this {
         const a1 = other.a, b1 = other.b, c1 = other.c, d1 = other.d, tx1 = other.tx, ty1 = other.ty;
         const a2 = this.a, b2 = this.b, c2 = this.c, d2 = this.d, tx2 = this.tx, ty2 = this.ty;
 
-        this.a = a1 * a2 + b1 * c2;
-        this.b = a1 * b2 + b1 * d2;
-        this.c = c1 * a2 + d1 * c2;
-        this.d = c1 * b2 + d1 * d2;
-        this.tx = a1 * tx2 + b1 * ty2 + tx1;
-        this.ty = c1 * tx2 + d1 * ty2 + ty1;
+        this.a = a1 * a2 + c1 * b2;
+        this.c = a1 * c2 + c1 * d2;
+        this.tx = a1 * tx2 + c1 * ty2 + tx1;
+
+        this.b = b1 * a2 + d1 * b2;
+        this.d = b1 * c2 + d1 * d2;
+        this.ty = b1 * tx2 + d1 * ty2 + ty1;
+
         return this;
     }
 
@@ -302,10 +305,11 @@ export class Matrix2D {
         const sin = Math.sin(angle);
         const a1 = this.a, b1 = this.b, c1 = this.c, d1 = this.d;
 
-        this.a = a1 * cos - c1 * sin;
-        this.b = b1 * cos - d1 * sin;
-        this.c = a1 * sin + c1 * cos;
-        this.d = b1 * sin + d1 * cos;
+        this.a = a1 * cos + c1 * sin;
+        this.c = -a1 * sin + c1 * cos;
+        this.b = b1 * cos + d1 * sin;
+        this.d = -b1 * sin + d1 * cos;
+
         return this;
     }
 

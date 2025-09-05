@@ -23,8 +23,9 @@ export class GameObject {
     public camera: Camera | null = null;
     public game: Game
 
-    constructor(game: Game) {
-        this.game = game
+    constructor(game?: Game) {
+        // @ts-ignore
+        this.game = game ?? window.game
 
         this._position.onChange(this.setDirty.bind(this))
         this._scale.onChange(this.setDirty.bind(this))
@@ -177,6 +178,7 @@ export class GameObject {
         child.parent = this;
         this.children.push(child);
         child.setDirty(); // Ensure child transform is recalculated
+        return this
     }
 
     removeChild(child: GameObject) {
@@ -186,6 +188,7 @@ export class GameObject {
             this.children.splice(index, 1);
             child.setDirty(); // Ensure child transform is recalculated
         }
+        return this
     }
 
     // --- Transform & Update Logic ---
@@ -208,10 +211,9 @@ export class GameObject {
         }
 
         this.localTransform.identity()
-            .scale(this._scale.x, this._scale.y)
-            .rotate(this._rotation)
             .translate(this._position.x, this._position.y)
-
+            .rotate(this._rotation)
+            .scale(this._scale.x, this._scale.y)
 
         if (this.parent) {
             this.worldTransform.copyFrom(this.parent.worldTransform).append(this.localTransform);
