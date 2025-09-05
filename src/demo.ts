@@ -47,8 +47,8 @@ class Debug extends GameObject {
         _ctx.strokeStyle = "rgba(0, 0, 0, 0.8)"; // Green, semi-transparent
         _ctx.lineWidth = 4;
         _ctx.strokeRect(
-            -this.game.scaler.baseWidth / 2, -this.game.scaler.baseHeight / 2,
-            this.game.scaler.baseWidth, this.game.scaler.baseHeight)
+            -this.game.scaler.width / 2, -this.game.scaler.height / 2,
+            this.game.scaler.width, this.game.scaler.height)
     }
 }
 

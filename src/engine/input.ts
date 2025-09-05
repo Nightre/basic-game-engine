@@ -49,8 +49,7 @@ export class InputManager {
     on = this.emitter.on;
     off = this.emitter.off;
 
-    // Mouse position in world coordinates
-    mousePosition: Vec2 = new Vec2();
+    mouseScreenPosition: Vec2 = new Vec2()
 
     // Tracks keys pressed in the current frame (e.g., "KeyW", "Space", "ArrowUp").
     private keysDown: Set<string> = new Set();
@@ -78,6 +77,11 @@ export class InputManager {
         this.attachEventListeners();
     }
 
+    getMouseWorldPosition() {
+        const worldPoint = this.game.mainCamera.screenToWorld(this.mouseScreenPosition)
+        return worldPoint
+    }
+
     /**
      * Attaches all necessary event listeners for keyboard and mouse input.
      * @private
@@ -89,10 +93,8 @@ export class InputManager {
         canvas.addEventListener('mousemove', this.handleMouseMove = (event: MouseEvent) => {
             const cssPos = new Vec2(event.clientX, event.clientY);
             const screenPos = this.scaler.cssToScreen(cssPos);
-            const worldPoint = this.game.mainCamera.screenToWorld(screenPos)
-            this.mousePosition.set(worldPoint);
-
-            this.emitter.emit('mousemove', { position: this.mousePosition.clone(), event });
+            this.mouseScreenPosition.set(screenPos)
+            this.emitter.emit('mousemove', { position: this.mouseScreenPosition.clone(), event });
         });
 
         // --- Keyboard ---
@@ -112,17 +114,17 @@ export class InputManager {
         // --- Mouse Buttons ---
         canvas.addEventListener('mousedown', this.handleMouseDown = (event: MouseEvent) => {
             this.buttonsDown.add(event.button);
-            this.emitter.emit('mousedown', { position: this.mousePosition.clone(), button: event.button, event });
+            this.emitter.emit('mousedown', { position: this.getMouseWorldPosition(), button: event.button, event });
         });
 
         canvas.addEventListener('mouseup', this.handleMouseUp = (event: MouseEvent) => {
             this.buttonsDown.delete(event.button);
-            this.emitter.emit('mouseup', { position: this.mousePosition.clone(), button: event.button, event });
+            this.emitter.emit('mouseup', { position: this.getMouseWorldPosition(), button: event.button, event });
         });
 
         // --- Additional Convenient Mouse Events ---
         canvas.addEventListener('click', this.handleClick = (event: MouseEvent) => {
-            this.emitter.emit('click', { position: this.mousePosition.clone(), button: event.button, event });
+            this.emitter.emit('click', { position: this.getMouseWorldPosition(), button: event.button, event });
         });
 
         canvas.addEventListener('wheel', this.handleWheel = (event: WheelEvent) => {
@@ -132,7 +134,7 @@ export class InputManager {
 
         canvas.addEventListener('contextmenu', this.handleContextMenu = (event: MouseEvent) => {
             event.preventDefault(); // Prevent browser's right-click menu
-            this.emitter.emit('contextmenu', { position: this.mousePosition.clone(), event });
+            this.emitter.emit('contextmenu', { position: this.getMouseWorldPosition(), event });
         });
     }
 
@@ -223,7 +225,7 @@ export class InputManager {
      * @returns The mouse position in the game object's local coordinate system.
      */
     getMouseLocal(entity: GameObject): Vec2 {
-        return entity.globalToLocalPosition(this.mousePosition);
+        return entity.globalToLocalPosition(this.getMouseWorldPosition());
     }
 
     /**

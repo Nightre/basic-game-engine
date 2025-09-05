@@ -12,36 +12,45 @@ export enum ScaleMode {
 
 export class CanvasScaler {
     canvas: HTMLCanvasElement;
-    public baseWidth: number;
-    public baseHeight: number;
+    public width: number;
+    public height: number;
 
     // 逻辑尺寸：游戏世界认为的画布大小
     public logicalWidth: number;
     public logicalHeight: number;
 
     // 视口物理尺寸：画布在屏幕上的实际像素数 (包含DPR)
-    public viewportWidth: number;
-    public viewportHeight: number;
+    public physicsWidth: number;
+    public physicsHeight: number;
+
+    public canvasWidth: number;
+    public canvasHeight: number;
 
     public dpr: number = 1;
     public mode: ScaleMode;
 
+    // logical 需要缩放多少达到 physics
     public scale: number = 1
+
+
+    // 物理大小的 offset
     public offsetX: number = 0;
     public offsetY: number = 0;
 
     constructor(canvas: HTMLCanvasElement, baseWidth: number, baseHeight: number, mode: ScaleMode = ScaleMode.EXPAND) {
         this.canvas = canvas;
-        this.baseWidth = baseWidth;
-        this.baseHeight = baseHeight;
+        this.width = baseWidth;
+        this.height = baseHeight;
         this.mode = mode;
 
         this.logicalWidth = baseWidth;
         this.logicalHeight = baseHeight;
 
-        this.viewportWidth = baseWidth;
-        this.viewportHeight = baseHeight;
+        this.physicsWidth = baseWidth;
+        this.physicsHeight = baseHeight;
 
+        this.canvasWidth = baseWidth;
+        this.canvasHeight = baseHeight;
 
         this.resize();
         window.addEventListener("resize", () => this.resize());
@@ -59,42 +68,54 @@ export class CanvasScaler {
 
         this.dpr = window.devicePixelRatio || 1;
 
-        const baseRatioExp = this.baseWidth / this.baseHeight;
+        const baseRatioExp = this.width / this.height;
         const parentRatioExp = parentWidth / parentHeight;
 
         if (parentRatioExp > baseRatioExp) {
-            this.logicalHeight = this.baseHeight;
-            this.logicalWidth = this.baseHeight * parentRatioExp;
+            this.logicalHeight = this.height;
+            this.logicalWidth = this.height * parentRatioExp;
         } else {
-            this.logicalWidth = this.baseWidth;
-            this.logicalHeight = this.baseWidth / parentRatioExp;
+            this.logicalWidth = this.width;
+            this.logicalHeight = this.width / parentRatioExp;
         }
 
         this.canvas.style.width = parentWidth + "px";
         this.canvas.style.height = parentHeight + "px";
 
-        this.viewportWidth = Math.round(parentWidth * this.dpr);
-        this.viewportHeight = Math.round(parentHeight * this.dpr);
+        this.canvasHeight = parentHeight
+        this.canvasWidth = parentWidth
 
-        this.canvas.width = this.viewportWidth;
-        this.canvas.height = this.viewportHeight;
+        this.physicsWidth = Math.round(parentWidth * this.dpr);
+        this.physicsHeight = Math.round(parentHeight * this.dpr);
 
-        const scaleX = parentWidth / this.baseWidth;
-        const scaleY = parentHeight / this.baseHeight;
+        this.canvas.width = this.physicsWidth;
+        this.canvas.height = this.physicsHeight;
+
+        const scaleX = this.physicsWidth / this.logicalWidth;
+        const scaleY = this.physicsHeight / this.logicalHeight;
         this.scale = Math.min(scaleX, scaleY);
 
-        const newWidth = this.baseWidth * this.scale;
-        const newHeight = this.baseHeight * this.scale;
+        const newWidth = this.width * this.scale;
+        const newHeight = this.height * this.scale;
 
-        this.offsetX = (parentWidth - newWidth) / 2;
-        this.offsetY = (parentHeight - newHeight) / 2;
+        this.offsetX = (this.physicsWidth - newWidth) / 2;
+        this.offsetY = (this.physicsHeight - newHeight) / 2;
     }
 
     cssToScreen(cssPos: Vec2) {
         const rect = this.canvas.getBoundingClientRect();
-        const x = (cssPos.x - rect.left - this.offsetX) / this.scale;
-        const y = (cssPos.y - rect.top - this.offsetY) / this.scale;
-        return new Vec2(x, y);
+        const cssX = cssPos.x - rect.left;
+        const cssY = cssPos.y - rect.top;
+
+        const physX = cssX * this.dpr;
+        const physY = cssY * this.dpr;
+
+        const localX = physX - this.offsetX;
+        const localY = physY - this.offsetY;
+
+        const screenX = localX / this.scale;
+        const screenY = localY / this.scale;
+        return new Vec2(screenX, screenY);
     }
 
     getContext() {
@@ -188,21 +209,20 @@ export class Game {
             }
 
             const m = finalTransform;
-            const dpr = this.scaler.dpr
             const scale = this.scaler.scale;
 
             const offsetX = this.scaler.offsetX;
             const offsetY = this.scaler.offsetY;
 
-            const finalScale = scale * dpr;
+            const finalScale = scale;
 
             this.ctx.setTransform(
                 m.a * finalScale,
                 m.b * finalScale,
                 m.c * finalScale,
                 m.d * finalScale,
-                m.tx * finalScale + offsetX * dpr,
-                m.ty * finalScale + offsetY * dpr
+                m.tx * finalScale + offsetX,
+                m.ty * finalScale + offsetY
             );
 
             obj.render(this.ctx);
