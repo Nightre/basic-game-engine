@@ -7,7 +7,6 @@ import { InputManager } from "./input";
 export enum ScaleMode {
     IGNORE,
     EXPAND,
-    KEEP,
 }
 
 export class CanvasScaler {
@@ -71,14 +70,6 @@ export class CanvasScaler {
         const baseRatioExp = this.width / this.height;
         const parentRatioExp = parentWidth / parentHeight;
 
-        if (parentRatioExp > baseRatioExp) {
-            this.logicalHeight = this.height;
-            this.logicalWidth = this.height * parentRatioExp;
-        } else {
-            this.logicalWidth = this.width;
-            this.logicalHeight = this.width / parentRatioExp;
-        }
-
         this.canvas.style.width = parentWidth + "px";
         this.canvas.style.height = parentHeight + "px";
 
@@ -87,6 +78,24 @@ export class CanvasScaler {
 
         this.physicsWidth = Math.round(parentWidth * this.dpr);
         this.physicsHeight = Math.round(parentHeight * this.dpr);
+
+        switch (this.mode) {
+            case ScaleMode.EXPAND:
+                if (parentRatioExp > baseRatioExp) {
+                    this.logicalHeight = this.height;
+                    this.logicalWidth = this.height * parentRatioExp;
+                } else {
+                    this.logicalWidth = this.width;
+                    this.logicalHeight = this.width / parentRatioExp;
+                }
+                break;
+            case ScaleMode.IGNORE:
+                this.logicalWidth = this.physicsWidth
+                this.logicalHeight = this.physicsHeight
+                break;
+            default:
+                break;
+        }
 
         this.canvas.width = this.physicsWidth;
         this.canvas.height = this.physicsHeight;

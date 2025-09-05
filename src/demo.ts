@@ -9,7 +9,7 @@ game.start({
     canvas: document.getElementById("canvas") as HTMLCanvasElement,
     width: 1600,
     height: 800,
-    scale: ScaleMode.IGNORE
+    scale: ScaleMode.EXPAND
 })
 const asset = game.assets
 const input = game.input
