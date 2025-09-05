@@ -2,7 +2,7 @@
 
 A minimal game engine framework based on the native Canvas API. Focused on simple implementation of core features, without complex rendering pipelines and additional dependencies.
 
-# ![Demo](https://raw.githack.com/Nightre/basic-game-engine/master/dist/index.html)
+# [Demo](https://raw.githack.com/Nightre/basic-game-engine/master/dist/index.html)
 
 ## Features
 
