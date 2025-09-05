@@ -45,20 +45,17 @@ export class Camera extends GameObject {
         const viewportWidth = this.game.scaler.logicalWidth;
         const viewportHeight = this.game.scaler.logicalHeight;
 
-
-        // const savePosition = this.position.clone()
-
-        // if (this.useSmooth) {
-        //     this.globalPosition = this.cameraPosition.add(this.position)
-        // }
-        const local = this.globalToLocalPosition(this.cameraPosition)
         this.updateTransform();
-        //this.position = savePosition
 
         this._viewMatrix.copyFrom(this.worldTransform)
             .translate(this.limitDiff.x, this.limitDiff.y)
-            .translate(local.x, local.y)
-            .invert();
+
+        if (this.useSmooth) {
+            const local = this.globalToLocalPosition(this.cameraPosition)
+            this._viewMatrix.translate(local.x, local.y)
+        }
+
+        this._viewMatrix.invert();
         this._viewMatrix.prepend(new Matrix2D(this.zoom, 0, 0, this.zoom, 0, 0));
 
         if (this.center) {
